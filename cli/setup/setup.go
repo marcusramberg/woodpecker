@@ -34,7 +34,7 @@ func setup(ctx context.Context, c *cli.Command) error {
 	_config, err := config.Get(ctx, c, c.String("config"))
 	if err != nil {
 		return err
-	} else if _config != nil {
+	} else if _config != nil && _config.ServerURL != "" {
 		setupAgain, err := ui.Confirm("The woodpecker-cli was already configured. Do you want to configure it again?")
 		if err != nil {
 			return err

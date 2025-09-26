@@ -33,7 +33,8 @@ func receiveTokenFromUI(c context.Context, serverURL string) (string, error) {
 		_ = srv.Shutdown(c)
 	}()
 
-	err := openBrowser(fmt.Sprintf("%s/cli/auth?port=%d", serverURL, port))
+	tokenUrl := fmt.Sprintf("%s/cli/auth?port=%d", serverURL, port)
+	err := openBrowser(tokenUrl)
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +42,7 @@ func receiveTokenFromUI(c context.Context, serverURL string) (string, error) {
 	spinnerCtx, spinnerDone := context.WithCancelCause(c)
 	go func() {
 		err = spinner.New().
-			Title("Waiting for token ...").
+			Title("Waiting for token - if your browser does not automatically open, go to this url:\n  " + tokenUrl).
 			Context(spinnerCtx).
 			Run()
 		if err != nil {
@@ -121,6 +122,10 @@ func openBrowser(url string) error {
 		err = exec.Command("open", url).Start()
 	default:
 		err = fmt.Errorf("unsupported platform")
+	}
+	if err == exec.ErrNotFound {
+		fmt.Println("Please open the following URL in your browser:", url)
+		return nil
 	}
 	return err
 }
