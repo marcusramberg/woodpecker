@@ -50,6 +50,7 @@ type local struct {
 	workflows       sync.Map
 	pluginGitBinary string
 	os, arch        string
+	sandboxLevel    sandboxLevel
 }
 
 var CLIWorkaroundExecAtDir string // To handle edge case for running local backend via cli exec
@@ -84,9 +85,27 @@ func (e *local) Load(ctx context.Context) (*types.BackendInfo, error) {
 	c, ok := ctx.Value(types.CliCommand).(*cli.Command)
 	if ok {
 		e.tempDir = c.String("backend-local-temp-dir")
+		e.sandboxLevel = sandboxLevel(c.String("backend-local-sandbox-level"))
+	}
+
+	// Validate sandbox level
+	switch e.sandboxLevel {
+	case sandboxLevelNone, sandboxLevelStandard, sandboxLevelStrict:
+		// Valid levels
+	default:
+		log.Warn().
+			Str("level", string(e.sandboxLevel)).
+			Msg("invalid sandbox level, defaulting to 'none'")
+		e.sandboxLevel = sandboxLevelNone
 	}
 
 	e.loadClone()
+
+	if e.sandboxLevel != sandboxLevelNone {
+		log.Info().
+			Str("level", string(e.sandboxLevel)).
+			Msg("macOS sandbox enabled for local backend")
+	}
 
 	return &types.BackendInfo{
 		Platform: e.os + "/" + e.arch,

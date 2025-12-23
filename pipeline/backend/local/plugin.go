@@ -33,6 +33,12 @@ func (e *local) execPlugin(ctx context.Context, step *types.Step, state *workflo
 	cmd.Env = env
 	cmd.Dir = state.workspaceDir
 
+	// Wrap with sandbox if enabled
+	cmd, err = e.wrapCommandWithSandbox(ctx, cmd, state)
+	if err != nil {
+		return fmt.Errorf("could not wrap command with sandbox: %w", err)
+	}
+
 	reader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err

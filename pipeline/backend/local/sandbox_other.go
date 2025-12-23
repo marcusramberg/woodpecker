@@ -1,4 +1,5 @@
-// Copyright 2023 Woodpecker Authors
+// Copyright 2025 Crow Authors
+// Copyright 2025 Woodpecker Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !darwin
+
 package local
 
 import (
-	"os"
-
-	"github.com/urfave/cli/v3"
+	"context"
+	"os/exec"
 )
 
-var Flags = []cli.Flag{
-	&cli.StringFlag{
-		Name:        "backend-local-temp-dir",
-		Sources:     cli.EnvVars("WOODPECKER_BACKEND_LOCAL_TEMP_DIR"),
-		Usage:       "set a different temp dir to clone workflows into",
-		DefaultText: "system temporary directory",
-		Value:       os.TempDir(),
-	},
-	&cli.StringFlag{
-		Name:    "backend-local-sandbox-level",
-		Sources: cli.EnvVars("WOODPECKER_BACKEND_LOCAL_SANDBOX_LEVEL"),
-		Usage:   "sandbox security level on macOS (none, standard, strict)",
-	},
+// sandboxLevel defines the security level (no-op on non-Darwin platforms).
+type sandboxLevel string
+
+const (
+	sandboxLevelNone     sandboxLevel = "none"
+	sandboxLevelStandard sandboxLevel = "standard"
+	sandboxLevelStrict   sandboxLevel = "strict"
+)
+
+// wrapCommandWithSandbox is a no-op on non-Darwin platforms.
+func (e *local) wrapCommandWithSandbox(_ context.Context, originalCmd *exec.Cmd, _ *workflowState) (*exec.Cmd, error) {
+	return originalCmd, nil
 }
