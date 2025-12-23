@@ -330,18 +330,70 @@ func runWithRetry(backendEngines []types.Backend) func(ctx context.Context, c *c
 
 		initHealth()
 
-		retryCount := c.Int("connect-retry-count")
-		retryDelay := c.Duration("connect-retry-delay")
-		var err error
-		for range retryCount {
-			if err = run(ctx, c, backendEngines); status.Code(err) == codes.Unavailable {
-				log.Warn().Err(err).Msg(fmt.Sprintf("cannot connect to %s, retrying in %v", c.String("server"), retryDelay))
-				time.Sleep(retryDelay)
-			} else {
-				break
+		baseRetryDelay := c.Duration("connect-retry-delay")
+		retryCount := 0
+
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info().Msg("agent shutdown requested")
+				return ctx.Err()
+			default:
+			}
+
+			err := run(ctx, c, backendEngines)
+
+			// If context was canceled or we got a fatal error, exit
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			grpcCode := status.Code(err)
+			switch grpcCode {
+			case codes.OK:
+				// Success
+				return nil
+			case codes.Unavailable, codes.DeadlineExceeded, codes.Internal, codes.Aborted:
+				// Recoverable errors - retry with exponential backoff
+				retryCount++
+
+				// Calculate delay with exponential backoff (max 5 minutes)
+				delay := time.Duration(retryCount) * baseRetryDelay
+				if delay > 5*time.Minute {
+					delay = 5 * time.Minute //nolint:mnd
+				}
+
+				// Log once every 10 attempts to prevent flooding
+				if retryCount%10 == 1 {
+					log.Warn().Err(err).Int("attempt", retryCount).Msgf("connection failed, will retry in %v", delay)
+				} else {
+					log.Debug().Err(err).Int("attempt", retryCount).Msgf("connection failed, will retry in %v", delay)
+				}
+
+				select {
+				case <-time.After(delay):
+					continue
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			default:
+				// Other errors might be fatal - still retry but log as error
+				retryCount++
+				delay := time.Duration(retryCount) * baseRetryDelay
+				if delay > 5*time.Minute {
+					delay = 5 * time.Minute //nolint:mnd
+				}
+
+				log.Error().Err(err).Int("attempt", retryCount).Msgf("unexpected error, will retry in %v", delay)
+
+				select {
+				case <-time.After(delay):
+					continue
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 		}
-		return err
 	}
 }
 

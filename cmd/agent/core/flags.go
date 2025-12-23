@@ -106,16 +106,10 @@ var flags = []cli.Flag{
 		Usage:   "backend to run pipelines on",
 		Value:   "auto-detect",
 	},
-	&cli.IntFlag{
-		Sources: cli.EnvVars("WOODPECKER_CONNECT_RETRY_COUNT"),
-		Name:    "connect-retry-count",
-		Usage:   "number of times to retry connecting to the server",
-		Value:   5,
-	},
 	&cli.DurationFlag{
 		Sources: cli.EnvVars("WOODPECKER_CONNECT_RETRY_DELAY"),
 		Name:    "connect-retry-delay",
-		Usage:   "duration to wait before retrying to connect to the server",
+		Usage:   "initial duration to wait before retrying to connect to the server (uses exponential backoff)",
 		Value:   time.Second * 2,
 	},
 }
