@@ -15,6 +15,7 @@
 package agent
 
 import (
+	"fmt"
 	"io"
 	"sync"
 
@@ -24,6 +25,7 @@ import (
 	backend "go.woodpecker-ci.org/woodpecker/v3/pipeline/backend/types"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline/log"
 	"go.woodpecker-ci.org/woodpecker/v3/pipeline/rpc"
+	"go.woodpecker-ci.org/woodpecker/v3/version"
 )
 
 func (r *Runner) createLogger(_logger zerolog.Logger, uploads *sync.WaitGroup, workflow *rpc.Workflow) pipeline.Logger {
@@ -44,6 +46,15 @@ func (r *Runner) createLogger(_logger zerolog.Logger, uploads *sync.WaitGroup, w
 		logger.Debug().Msg("log stream opened")
 
 		logStream := log.NewLineWriter(r.client, step.UUID, secrets...)
+
+		// Log hostname and version at start of workflow
+		if len(workflow.Config.Stages) > 0 && len(workflow.Config.Stages[0].Steps) > 0 &&
+			workflow.Config.Stages[0].Steps[0].UUID == step.UUID {
+			if _, err := fmt.Fprintf(logStream, "Workflow starting on %s(%s)\n", r.hostname, version.String()); err != nil {
+				logger.Error().Err(err).Msg("could not write hostname to log stream")
+			}
+		}
+
 		if err := log.CopyLineByLine(logStream, rc, pipeline.MaxLogLineLength); err != nil {
 			logger.Error().Err(err).Msg("copy limited logStream part")
 		}
