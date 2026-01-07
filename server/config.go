@@ -71,6 +71,7 @@ var Config = struct {
 		DefaultApprovalMode                 model.ApprovalMode
 		DefaultWorkflowLabels               map[string]string
 		DefaultClonePlugin                  string
+		OIDCProvider                        bool
 		TrustedClonePlugins                 []string
 		Volumes                             []string
 		Networks                            []string

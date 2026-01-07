@@ -27,6 +27,7 @@ import (
 	"go.woodpecker-ci.org/woodpecker/v3/server"
 	"go.woodpecker-ci.org/woodpecker/v3/server/api"
 	"go.woodpecker-ci.org/woodpecker/v3/server/api/metrics"
+	"go.woodpecker-ci.org/woodpecker/v3/server/oidc"
 	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/header"
 	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/session"
 	"go.woodpecker-ci.org/woodpecker/v3/server/router/middleware/token"
@@ -72,6 +73,14 @@ func Load(noRouteHandler http.HandlerFunc, middleware ...gin.HandlerFunc) http.H
 	apiRoutes(base)
 	if server.Config.WebUI.EnableSwagger {
 		setupSwaggerConfigAndRoutes(e)
+	}
+	if server.Config.Pipeline.OIDCProvider {
+		handler, err := oidc.SetupRoutes()
+		if err == nil {
+			base.GET("/.well-known", gin.WrapH(handler))
+		} else {
+			log.Warn().Msgf("Failed to setup oidc %s", err)
+		}
 	}
 
 	return e

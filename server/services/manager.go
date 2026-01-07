@@ -101,6 +101,10 @@ func (m *manager) SignaturePublicKey() crypto.PublicKey {
 	return m.signaturePublicKey
 }
 
+func (m *manager) SignaturePrivateKey() crypto.PublicKey {
+	return m.signaturePrivateKey
+}
+
 func (m *manager) SecretServiceFromRepo(_ *model.Repo) secret.Service {
 	return m.SecretService()
 }

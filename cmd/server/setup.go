@@ -260,6 +260,9 @@ func setupEvilGlobals(ctx context.Context, c *cli.Command, s store.Store) (err e
 	server.Config.WebUI.SkipVersionCheck = c.Bool("skip-version-check")
 	server.Config.Pipeline.PrivilegedPlugins = c.StringSlice("plugins-privileged")
 
+	// OIDC Provider
+	server.Config.Pipeline.OIDCProvider = c.Bool("enable-oidc-provider")
+
 	// prometheus
 	server.Config.Prometheus.AuthToken = c.String("prometheus-auth-token")
 

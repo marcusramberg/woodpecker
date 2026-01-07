@@ -163,6 +163,12 @@ var flags = append([]cli.Flag{
 		Usage:   "The default value for allowing pull requests on a repo.",
 		Value:   true,
 	},
+	&cli.BoolFlag{
+		Sources: cli.EnvVars("WOODPECKER_ENABLE_OIDC_PROVIDER"),
+		Name:    "enable-oidc-provider",
+		Usage:   "Enable OIDC Provider for pipelines, to allow workload identity federation",
+		Value:   false,
+	},
 	&cli.StringFlag{
 		Sources: cli.EnvVars("WOODPECKER_DEFAULT_APPROVAL_MODE"),
 		Name:    "default-approval-mode",
